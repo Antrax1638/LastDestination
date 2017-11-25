@@ -4,14 +4,14 @@ using System.Collections.Generic;
 using UnityEngine;
 using Pathfinding;
 
-public enum IASearch
+public enum AISearch
 {
     None,
     Normal,
     Force,
 }
 
-public enum IAMode
+public enum AIMode
 { 
     None = 3,
     Target,
@@ -19,32 +19,40 @@ public enum IAMode
 
 }
 
-public struct IAData 
+public enum AIControl
+{
+    Force = ForceMode2D.Force,
+    Impulse = ForceMode2D.Impulse,
+    Velocity,
+
+}
+
+public struct AIData 
 {
     public Transform Target;
     public Vector3 Direction;
     public float Speed;
     public Vector3 DirNormalized;
-    public ForceMode2D ForceMode;
+    public AIControl ControlMode;
     public RaycastHit2D Hit;
 }
 
 [RequireComponent(typeof(Rigidbody2D))]
 [RequireComponent(typeof(Seeker))]
-public class IA : MonoBehaviour
+public class AI : MonoBehaviour
 {
     //Control Properties:
-    public IAMode Mode = IAMode.Target;
+    public AIMode Mode = AIMode.Target;
     public Transform Target;
     public float UpdateRate = 2.0f;
     public float Speed = 300.0f;
     public Path Path;
-    public ForceMode2D FMode;
+    public AIControl ControlMode;
     public float NextWaypontDistance = 3.0f;
     public bool Search = false;
     public bool SearchPlayer = false;
     public bool AutomaticSearch = false;
-    public IASearch SMode = IASearch.Normal;
+    public AISearch SearchMode = AISearch.Normal;
     public string SearchTag = "None";
     public float SearchRate = 1.0f;
     public float Length = 2.5f;
@@ -62,30 +70,29 @@ public class IA : MonoBehaviour
     
     private float MemoryDelta = 0;
     private float DeltaTime = 0;
-    private Seeker SeekerComponent;
-    private Rigidbody2D BodyComponent;
+    protected Seeker SeekerComponent;
+    protected Rigidbody2D BodyComponent;
     private int CurrentPathIndex = 0;
-    private Vector3 TargetLocation;
+    protected Vector3 TargetLocation;
     
 
-    protected IAData Data;
+    protected AIData Data;
     protected RaycastHit2D Hit;
+    protected float LookAtRotation = 0;
 
     protected virtual void Awake()
     {
         SeekerComponent = GetComponent<Seeker>();
         BodyComponent = GetComponent<Rigidbody2D>();
-        Data = new IAData();
+        Data = new AIData();
     }
 
     protected virtual void Start()
     {
-        if (Target == null && SearchPlayer && Mode == IAMode.Target || (SearchPlayer && SMode == IASearch.Force))
+        if (Target == null && SearchPlayer && Mode == AIMode.Target || (SearchPlayer && SearchMode == AISearch.Force))
             StartCoroutine(UpdatePlayer());
-        if (Target == null && Search && Mode == IAMode.Target  || (Search && SMode == IASearch.Force))
+        if (Target == null && Search && Mode == AIMode.Target || (Search && SearchMode == AISearch.Force))
             StartCoroutine(UpdateSearch());
-
-        ApplyMode();
 
         SeekerComponent.StartPath(transform.position, TargetLocation, OnPathComplete);
         StartCoroutine(UpdatePath());
@@ -95,28 +102,31 @@ public class IA : MonoBehaviour
     {
         switch (Mode)
         {
-            case IAMode.Target:
-                GameObject sResult = GameObject.FindGameObjectWithTag("Player");
+            case AIMode.Target:
+                GameObject sResult = GameObject.FindGameObjectWithTag(SearchTag);
                 if (sResult == null)
                 {
                     yield return new WaitForSeconds(SearchRate);
-                    StartCoroutine(UpdatePlayer());
+                    StartCoroutine(UpdateSearch());
                 }
                 else
                 {
-                    Search = false;
+                    //Search = false;
                     if (Vector3.Distance(sResult.transform.position, transform.position) <= SearchLength)
                     {
+                        Search = false;
                         Target = sResult.transform;
+                        TargetLocation = Target.position;
                         StartCoroutine(UpdatePath());
                     }
                 }
             break;
 
-            case IAMode.Location:
+            case AIMode.Location:
                 Search = false;
                 if (Vector3.Distance(Location, transform.position) <= SearchLength)
                     TargetLocation = Location;
+                StartCoroutine(UpdatePath());
             break;
         }
         
@@ -126,7 +136,7 @@ public class IA : MonoBehaviour
     {
         switch (Mode)
         {
-            case IAMode.Target:
+            case AIMode.Target:
                 GameObject sResult = GameObject.FindGameObjectWithTag("Player");
                 if (sResult == null)
                 {
@@ -135,17 +145,22 @@ public class IA : MonoBehaviour
                 }
                 else
                 {
-                    SearchPlayer = false;
                     if (Vector3.Distance(sResult.transform.position, transform.position) <= SearchLength)
                     {
+                        SearchPlayer = false;
                         Target = sResult.transform;
+                        TargetLocation = Target.position;
                         StartCoroutine(UpdatePath());
                     }
+                    
                 }
             break;
-            case IAMode.Location:
+
+            case AIMode.Location:
+                SearchPlayer = false;
                 if (Vector3.Distance(Location, transform.position) <= SearchLength)
                     TargetLocation = Location;
+                StartCoroutine(UpdatePath());
             break;
         }
         
@@ -154,10 +169,16 @@ public class IA : MonoBehaviour
 
     IEnumerator UpdatePath()
     {
-        if (Target == null && Mode == IAMode.Target)
+        if (Target == null && Mode == AIMode.Target)
             yield break;
         SearchLocation = false;
-        ApplyMode();
+
+        switch (Mode)
+        {
+            case AIMode.Location: TargetLocation = Location; break;
+            case AIMode.Target: TargetLocation = Target.position; break;
+        }
+
         SeekerComponent.StartPath(transform.position, TargetLocation, OnPathComplete);
         yield return new WaitForSeconds(1.0f / UpdateRate);
         StartCoroutine(UpdatePath());
@@ -184,24 +205,29 @@ public class IA : MonoBehaviour
             MemoryDelta = 0.0f;
         }
 
-        if (Target == null && SearchPlayer || (SearchPlayer && SMode == IASearch.Force))
+        if (Target == null && SearchPlayer || (SearchPlayer && SearchMode == AISearch.Force))
             StartCoroutine(UpdatePlayer());
-        if (Target == null && Search || (Search && SMode == IASearch.Force))
+        if (Target == null && Search || (Search && SearchMode == AISearch.Force))
             StartCoroutine(UpdateSearch());
         
         Data.Target = Target;
-        Data.ForceMode = FMode;
+        Data.ControlMode = ControlMode;
 
         if (Target == null && !Search && AutomaticSearch)
             Search = true;
 
-        if (Target == null && Mode == IAMode.Location && SearchLocation)
+        if (Target == null && Mode == AIMode.Location && SearchLocation)
             StartCoroutine(UpdatePath());
+    }
+
+    protected virtual void FixedUpdateCall() { 
+    
     }
 
     protected virtual void FixedUpdate()
     {
-        if (Path == null || Target == null && Mode == IAMode.Target)
+        FixedUpdateCall();
+        if (Path == null || Target == null && Mode == AIMode.Target)
             return;
         if (CurrentPathIndex >= Path.vectorPath.Count)
         {
@@ -218,15 +244,22 @@ public class IA : MonoBehaviour
         Data.DirNormalized = Data.Direction.normalized;
         Data.DirNormalized *= Speed * Time.fixedDeltaTime;
 
+        Vector2 difference = TargetLocation - transform.position;
+        LookAtRotation = Mathf.Atan2(difference.x, difference.y) * Mathf.Rad2Deg;
+
         Hit = Physics2D.Raycast(transform.position, (TargetLocation - transform.position).normalized, Length);
         Data.Hit = Hit;
         if (Hit)
         {
-            LineOfSight = (Hit.transform == Target);
+            if (LineOfSight = (Hit.transform == Target))
+            {
+                MemoryDelta -= Mathf.Clamp(MemoryDelta, 0, MemoryTime); 
+            }
+            
         }
 
         //Hardcodeo:
-        BodyComponent.AddForce(Data.DirNormalized, FMode);
+        //BodyComponent.AddForce(Data.DirNormalized, FMode);
         
         float Distance = Vector3.Distance(transform.position, Path.vectorPath[CurrentPathIndex]);
         if(Distance < NextWaypontDistance)
@@ -236,25 +269,9 @@ public class IA : MonoBehaviour
         }
     }
 
-    private void ApplyMode()
-    {
-        switch (Mode)
-        {
-            default: break;
-            case IAMode.None: TargetLocation = new Vector3(); break;
-            case IAMode.Target: TargetLocation = Target.position; break;
-            case IAMode.Location: TargetLocation = Location; break;
-        }
-    }
-
     void OnDisable()
     {
         SeekerComponent.pathCallback -= OnPathComplete;
     }
 
-    //Hardcodeo:
-    void OnCollisionEnter2D(Collision2D coll) {
-        if (coll.gameObject.tag == SearchTag)
-            Destroy(coll.gameObject);
-    }
 }
