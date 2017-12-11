@@ -2,39 +2,57 @@
 using System.Collections.Generic;
 using UnityEngine;
 
+[RequireComponent(typeof(Rigidbody2D))]
+[RequireComponent(typeof(SpriteRenderer))]
 public class Projectile : MonoBehaviour 
 {
 	public string Name = "Projectile";
-	public Vector2 Direction = new Vector2();
 	public float Speed = 0;
-	public float MaxLifeTime = 0;
-    public float TimeToInvoke = 1.5f;
-	
-	private Rigidbody2D ProjectileBody;
-	private BoxCollider2D Collider;
-	private SpriteRenderer ProjectileSprite;
-	private float LifeTime;
+	public float MaxLifeTime = 1.5f;
+    public float TimeToInvoke;
+    public int Id;
+    public bool Raycast;
+
+    [Header("Stage")]
+    public bool Stage;
+    public float StageTime = 30.0f;
+
+    [HideInInspector]
+    public Vector2 Direction = new Vector2();
+
+	private Rigidbody2D BodyComponent;
+    private Collider2D ColliderComponent;
+	private SpriteRenderer SpriteComponent;
+	private float LifeTime,Energy;
+    RaycastHit2D RayHit;
 
 	void Awake()
 	{
-		ProjectileBody = GetComponent<Rigidbody2D> ();
-		Collider = GetComponent<BoxCollider2D> ();
-		ProjectileSprite = GetComponent<SpriteRenderer> ();
+        BodyComponent = GetComponent<Rigidbody2D>();
+		ColliderComponent = GetComponent<Collider2D> ();
+		SpriteComponent = GetComponent<SpriteRenderer> ();
 		gameObject.name = Name;
 	}
-	
+
+    void FixedUpdate()
+    {
+        if(Raycast) RayHit = Physics2D.Raycast(transform.position, BodyComponent.velocity);
+    }
+
 	void Update()
 	{
 		LifeTime += Time.deltaTime;
-		if (gameObject != null && LifeTime > MaxLifeTime && MaxLifeTime > 0.0f)
-			Destroy (this.gameObject);
+        Energy = (BodyComponent.mass * Mathf.Pow(BodyComponent.velocity.magnitude, 2) / 2);
+        
+        if ( LifeTime > MaxLifeTime && MaxLifeTime > 0.0f)
+            Disable();
 	}
 
 	void OnCollisionEnter2D(Collision2D col)
 	{
 		if (col.gameObject.tag == "Wall" || col.gameObject.tag == "Prop") 
 		{
-            Destroy(gameObject);
+            Disable();
 		}
 
 	}
@@ -42,14 +60,42 @@ public class Projectile : MonoBehaviour
 	//Funciones:
 	public void Launch()
 	{
-		ProjectileBody.AddForce (Direction * Speed,ForceMode2D.Impulse);
+        BodyComponent.AddForce(Direction * Speed, ForceMode2D.Impulse);
+        if (Stage && StageTime <= MaxLifeTime) Invoke("Stage0", StageTime);
         Invoke("OnLaunch", TimeToInvoke);
 	}
 
     public virtual void OnLaunch() 
     {
+      
         Debug.Log("Launched " + gameObject.name);
     }
 
-	
+	public void Disable()
+    {
+        gameObject.SetActive(false);
+        BodyComponent.simulated = false;
+        BodyComponent.velocity = Vector2.zero;
+        BodyComponent.isKinematic = true;
+        LifeTime = 0;
+    }
+
+    public void Enable()
+    {
+        gameObject.SetActive(true);
+        BodyComponent.simulated = true;
+        BodyComponent.velocity = Vector2.zero;
+        BodyComponent.isKinematic = false;
+        LifeTime = 0;
+    }
+
+    public virtual void Stage0()
+    {
+        Debug.Log("Stage 0");
+    }
+
+    public float GetEnergy()
+    {
+        return Energy;
+    }
 }

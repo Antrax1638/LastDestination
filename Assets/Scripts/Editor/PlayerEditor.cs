@@ -7,7 +7,7 @@ using UnityEditor;
 public class PlayerEditor : Editor 
 {
     private Player PL;
-    private bool ToggleWalk,ToggleRun,ToggleJump,ToggleGeneral;
+    private bool ToggleWalk,ToggleRun,ToggleJump,ToggleGeneral,ToggleAim;
 
 	void OnEnable() {
         PL = target as Player;
@@ -24,13 +24,17 @@ public class PlayerEditor : Editor
         if (ToggleGeneral) 
         {
             GUILayout.Label("General Properties");
-            PL.FaceToMouse = EditorGUILayout.Toggle("Face to mouse", PL.FaceToMouse);
             PL.Dash = EditorGUILayout.Toggle("Dash", PL.Dash);
             PL.DashForce = EditorGUILayout.FloatField("Dash Force", PL.DashForce);
+            //Genero:
             PL.PlayerGender = (Gender)EditorGUILayout.EnumPopup("Player Gender", PL.PlayerGender);
+            switch (PL.PlayerGender)
+            {
+                case Gender.Female: PL.FemaleIdleName = EditorGUILayout.TextField("Female Idle Name", PL.FemaleIdleName); break;
+                case Gender.Male: PL.MaleIdleName = EditorGUILayout.TextField("Male Idle Name", PL.MaleIdleName); break;
+            }
             PL.IdleIndex = EditorGUILayout.IntField("Animation Idle", PL.IdleIndex);
-            PL.LookAtMouse = EditorGUILayout.Toggle("Look At Mouse", PL.LookAtMouse);
-            PL.LookAtMouseIndex = EditorGUILayout.IntField("Look At Mouse Index", PL.LookAtMouseIndex);
+            
         }
         GUILayout.EndVertical();
         GUILayout.Space(5);
@@ -95,6 +99,20 @@ public class PlayerEditor : Editor
             PL.JumpOnAir = EditorGUILayout.IntField("Air Jumps Count", PL.JumpOnAir);
             PL.AirControl = EditorGUILayout.Vector2Field("Air Control", PL.AirControl);
             PL.JumpOnAirReset = EditorGUILayout.Toggle("Air Jump Reset", PL.JumpOnAirReset);
+        }
+        GUILayout.EndVertical();
+        GUILayout.Space(5);
+        //Aim
+        GUILayout.BeginVertical("Box");
+        ToggleAim = EditorGUILayout.Foldout(ToggleAim, "Aiming System", true);
+        if (ToggleAim)
+        {
+            GUILayout.Label("Aim Properties");
+            PL.FaceToMouse = EditorGUILayout.Toggle("Face to mouse", PL.FaceToMouse);
+            PL.LookAtMouse = EditorGUILayout.Toggle("Look At Mouse", PL.LookAtMouse);
+            PL.LookAtMouseIdle = EditorGUILayout.IntField("Look At Mouse Idle", PL.LookAtMouseIdle);
+            EUtils.EditorPropertyField(target, "LookAtMouseIndex");
+            PL.Image = (Sprite)EditorGUILayout.ObjectField("LookAtMouse Image", PL.Image, typeof(Sprite), true);
         }
         GUILayout.EndVertical();
         GUILayout.Space(5);

@@ -17,13 +17,13 @@ public class AIControllerEditor : Editor
     public override void OnInspectorGUI()
     {
         //base.OnInspectorGUI();
-        Tab = GUILayout.Toolbar(Tab, new string[] { "Basic" , "Advanced" });
+        Tab = GUILayout.Toolbar(Tab, new string[] { "Basic" , "Advanced", "Extended" });
         switch (Tab)
         {
             default: break;
             case 0: BasicControls(); break;
             case 1: AdvancedControls(); break;
-            
+            case 2: ExtendedControls(); break;
         }
     }
 
@@ -44,16 +44,13 @@ public class AIControllerEditor : Editor
         GUILayout.Space(5);
 
         GUILayout.Label("Search System");
-        GUILayout.BeginVertical();
+        GUILayout.BeginVertical("Button");
         GUILayout.BeginHorizontal();
         if (AIC.Mode == AIMode.Target)
         {
-            GUILayout.Label("Search");
-            AIC.Search = EditorGUILayout.Toggle(AIC.Search);
-            GUILayout.Label("Search Player");
-            AIC.SearchPlayer = EditorGUILayout.Toggle(AIC.SearchPlayer);
-            GUILayout.Label("Auto Search");
-            AIC.AutomaticSearch = EditorGUILayout.Toggle(AIC.AutomaticSearch);
+            AIC.Search = EditorGUILayout.ToggleLeft("Search", AIC.Search, GUILayout.MaxWidth(60));
+            AIC.SearchPlayer = EditorGUILayout.ToggleLeft("Search Player", AIC.SearchPlayer, GUILayout.MaxWidth(100));
+            AIC.AutomaticSearch = EditorGUILayout.ToggleLeft("Auto Search", AIC.AutomaticSearch, GUILayout.MaxWidth(100));
         }
         else
             AIC.SearchLocation = EditorGUILayout.Toggle("Search Location", AIC.SearchLocation);
@@ -64,28 +61,42 @@ public class AIControllerEditor : Editor
         AIC.SearchTag = EditorGUILayout.TextField("Search Tag", AIC.SearchTag);
         GUILayout.EndVertical();
         GUILayout.Space(5);
-
-        
-
     }
 
     void AdvancedControls()
     {
+        GUILayout.Label("Movement System");
         AIC.ControlMode = (AIControl)EditorGUILayout.EnumPopup("Control Mode", AIC.ControlMode);
         AIC.Speed = EditorGUILayout.FloatField("Speed", AIC.Speed);
+        AIC.Jump = EditorGUILayout.Toggle("Jump", AIC.Jump);
+        AIC.JumpHeight = EditorGUILayout.FloatField("Jump Height", AIC.JumpHeight);
+        AIC.JumpProbability = EditorGUILayout.Slider("Jump Probability", AIC.JumpProbability, 0.0f, 100.0f);
+        
+        GUILayout.Space(5);
 
         GUILayout.Label("Attack System");
-        AIC.Type = (AIType)EditorGUILayout.EnumPopup("Type", AIC.Type);
-        switch (AIC.Type) {
-            case AIType.Ranged: 
+        AIC.Attack = EditorGUILayout.Toggle("Attack",AIC.Attack);
+        AIC.AType = (AIAttackType)EditorGUILayout.EnumPopup("Type", AIC.AType);
+        switch (AIC.AType) {
+            case AIAttackType.Ranged: 
                 AIC.Prefab = (GameObject)EditorGUILayout.ObjectField("Prefab", AIC.Prefab, typeof(GameObject), true);
                 AIC.AttackLength = EditorGUILayout.FloatField("Attack Length", AIC.AttackLength);
-                break;
+                AIC.AMode = (AIAttackMode)EditorGUILayout.EnumPopup("Attack Mode", AIC.AMode);
+                AIC.Accuracy = EditorGUILayout.FloatField("Accuracy", AIC.Accuracy);
+            break;
         }
         
         AIC.AttackRate = EditorGUILayout.FloatField("Attack Rate", AIC.AttackRate);
+        AIC.AttackSpeed = EditorGUILayout.FloatField("Attack Speed", AIC.AttackSpeed);
         AIC.Length = EditorGUILayout.FloatField("Sight Length", AIC.Length);
+        GUILayout.Space(5);
 
+        GUILayout.Label("Aggression System");
+        EUtils.EditorPropertyField(target, "AggressionTable");
+        GUILayout.Space(5);
     }
 
+    void ExtendedControls(){
+        
+    }
 }

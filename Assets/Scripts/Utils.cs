@@ -86,6 +86,30 @@ public class Utils : MonoBehaviour {
 	    return Current + DeltaMove;
     }
 
+    public static Vector2 GetLaunchAngle(Vector2 TPos,Vector2 Pos,float Speed, float Gravity)
+    {
+        Vector2 Dist = TPos - Pos;
+        float y = Dist.y;
+        Dist.y = 0.0f;
+        float x = Dist.magnitude;
+
+        float EquationTop = Mathf.Pow(Speed, 4) - Gravity * (Gravity * Mathf.Pow(x, 2) + 2 * y * Mathf.Pow(Speed, 2));
+        if (EquationTop >= 0.0f)
+        {
+            float EquationSqrt = Mathf.Sqrt(EquationTop);
+            float x1 = (Mathf.Pow(Speed, 2) + EquationSqrt);
+            float x2 = (Mathf.Pow(Speed, 2) - EquationSqrt);
+            float Bot = Gravity * x;
+
+            return new Vector2(Mathf.Atan2(x1, Bot), Mathf.Atan2(x2, Bot));
+        }
+        else
+        {
+            return new Vector2(0.0f, 0.0f);
+        }
+        
+    }
+
 }
 
 public class EUtils : MonoBehaviour

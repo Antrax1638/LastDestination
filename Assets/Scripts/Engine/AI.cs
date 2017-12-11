@@ -48,6 +48,9 @@ public class AI : MonoBehaviour
     public float Speed = 300.0f;
     public Path Path;
     public AIControl ControlMode;
+    public bool Jump;
+    public float JumpHeight;
+    public float JumpProbability;
     public float NextWaypontDistance = 3.0f;
     public bool Search = false;
     public bool SearchPlayer = false;
@@ -77,8 +80,8 @@ public class AI : MonoBehaviour
     
 
     protected AIData Data;
-    protected RaycastHit2D Hit;
-    protected float LookAtRotation = 0;
+    protected RaycastHit2D Hit,JumpHit;
+    protected float LookAtRotation = 0,JumpHeightValue,JumpDeltaTime;
 
     protected virtual void Awake()
     {
@@ -220,8 +223,19 @@ public class AI : MonoBehaviour
             StartCoroutine(UpdatePath());
     }
 
-    protected virtual void FixedUpdateCall() { 
-    
+    protected virtual void FixedUpdateCall() 
+    {
+        JumpDeltaTime += Time.fixedDeltaTime;
+        float JumpForce = Mathf.Sqrt(Physics2D.gravity.magnitude * JumpHeight * 2);
+
+        //JumpHit = Physics2D.Raycast(transform.position, Dir, 1);
+        float Probability = Random.Range(0.0f, 100.0f);
+        
+        if (Jump && JumpDeltaTime > 1 && Probability < JumpProbability)
+        {
+            BodyComponent.AddForce(Data.DirNormalized * JumpForce, ForceMode2D.Impulse);
+            JumpDeltaTime = 0;
+        }
     }
 
     protected virtual void FixedUpdate()
@@ -253,14 +267,10 @@ public class AI : MonoBehaviour
         {
             if (LineOfSight = (Hit.transform == Target))
             {
-                MemoryDelta -= Mathf.Clamp(MemoryDelta, 0, MemoryTime); 
+                MemoryDelta -= Mathf.Clamp(MemoryDelta, 0, MemoryTime);
             }
-            
         }
-
-        //Hardcodeo:
-        //BodyComponent.AddForce(Data.DirNormalized, FMode);
-        
+   
         float Distance = Vector3.Distance(transform.position, Path.vectorPath[CurrentPathIndex]);
         if(Distance < NextWaypontDistance)
         {

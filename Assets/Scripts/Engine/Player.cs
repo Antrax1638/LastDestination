@@ -25,21 +25,15 @@ public class Player : MonoBehaviour
 {
     //General Control System:
     public Gender PlayerGender = Gender.None;
-    public bool FaceToMouse = false;
     public bool Dash;
     public float DashForce = 0.0f;
     public int IdleIndex = 0;
-    public bool LookAtMouse;
-    public int LookAtMouseIndex;
     public float DeltaTime;
+    public string FemaleIdleName = "Female_Idle",MaleIdleName = "Male_Idle";
 
     private bool Flip;
     private string TriggerTag;
     private float GravityScale;
-    private Vector2 MouseWorld;
-    private Vector2 HandLocation;
-    private float HandRotation = 0.0f;
-    private float OldHandRotation;
 
     //Walk Control System: (Sistema de control para moviemiento)
     public bool Walk = true, Walking;
@@ -83,6 +77,18 @@ public class Player : MonoBehaviour
     
     private float RunVelocity = 0.0f;
 
+    //Aiming Control System:
+    public bool FaceToMouse;
+    public bool LookAtMouse;
+    public int LookAtMouseIdle;
+    public List<int> LookAtMouseIndex;
+    public Sprite Image;
+
+    private Vector2 MouseWorld;
+    private Vector2 HandLocation;
+    private float HandRotation = 0.0f;
+    private float OldHandRotation;
+
     //Components (Componentes):
     private Animator AnimatorComponent;
     private Rigidbody2D BodyComponent;
@@ -103,7 +109,7 @@ public class Player : MonoBehaviour
     {
         DeltaTime = 0.0f;
         GravityScale = BodyComponent.gravityScale;
-        OldHandRotation = GetComponentsInChildren<Transform>()[LookAtMouseIndex].transform.rotation.z;
+        //OldHandRotation = GetComponentsInChildren<Transform>()[LookAtMouseIndex].transform.rotation.z;
     }
 
     void FixedUpdate()
@@ -134,22 +140,47 @@ public class Player : MonoBehaviour
         }
 
         if (!Walking && !Running && PlayerGender == Gender.Male)
-            SetAnimationIdle("Male_Idle", IdleIndex);
+            SetAnimationIdle(MaleIdleName, IdleIndex);
         else if (!Walking && !Running && PlayerGender == Gender.Female)
-            SetAnimationIdle("Female_Idle", IdleIndex);
+            SetAnimationIdle(FemaleIdleName, IdleIndex);
 
+        
+    }
+
+    void LateUpdate()
+    {
         if (LookAtMouse)
         {
+            GetPart("FrontHand").transform.localPosition = new Vector3(-0.03f, 0.08f, 0);
+            GetPart("FrontHand").GetComponent<SpriteRenderer>().sprite = Image;
+            GetPart("BackHand").transform.localPosition = new Vector3(0.03f, 0.08f, 0);
+            GetPart("BackHand").GetComponent<SpriteRenderer>().sprite = Image;
             MouseWorld = CameraComponent.ScreenToWorldPoint(new Vector3(Input.mousePosition.x, Input.mousePosition.y, CameraComponent.nearClipPlane));
-            HandLocation = GetComponentsInChildren<Transform>()[LookAtMouseIndex].transform.position;
-            HandRotation = Mathf.Atan2(MouseWorld.y - HandLocation.y, MouseWorld.x - HandLocation.x);
-            HandRotation = HandRotation * (180.0f / Mathf.PI);
-            GetComponentsInChildren<Transform>()[LookAtMouseIndex].transform.localRotation = Quaternion.Euler(0, 0, HandRotation);
+            for (int i = 0; i < LookAtMouseIndex.Count; i++)
+            {
+                HandLocation = GetComponentsInChildren<Transform>()[LookAtMouseIndex[i]].transform.position;
+                HandRotation = Mathf.Atan2(MouseWorld.y - HandLocation.y, MouseWorld.x - HandLocation.x);
+                HandRotation = HandRotation * (180.0f / Mathf.PI);
+                if (Flip)
+                {
+                    HandRotation -= 180;
+                    HandRotation *= -1;
+                }
+                //GetComponentsInChildren<Transform>()[LookAtMouseIndex[i]].transform.localRotation = Quaternion.Euler(0, 0, HandRotation);
+                GetComponentsInChildren<Transform>()[LookAtMouseIndex[i]].transform.localEulerAngles = new Vector3(0, 0, HandRotation);
+                //GetComponentsInChildren<Transform>()[LookAtMouseIndex[i]].transform.Rotate(new Vector3(0, 0, HandRotation),Space.World);
+            }
         }
         else
         {
-            GetComponentsInChildren<Transform>()[LookAtMouseIndex].transform.localRotation = Quaternion.Euler(0, 0, OldHandRotation);
+            for (int i = 0; i < LookAtMouseIndex.Count; i++)
+            {
+                GetComponentsInChildren<Transform>()[LookAtMouseIndex[i]].transform.localRotation = Quaternion.identity;
+            }
         }
+        
+        
+        
     }
 
     private void WalkControl() 
@@ -277,7 +308,8 @@ public class Player : MonoBehaviour
         }
     }
 
-    public Transform GetPart(string name) {
+    public Transform GetPart(string name) 
+    {
         foreach (Transform t in GetComponentsInChildren<Transform>())
         {
             if (t.name == name)
@@ -288,12 +320,14 @@ public class Player : MonoBehaviour
 
     public bool GetFlip() { return Flip; }
 
-    void OnCollisionEnter2D(Collision2D coll) {
+    void OnCollisionEnter2D(Collision2D coll) 
+    {
         Grounded = true;
         Jumping = false;
     }
 
-    void OnCollisionStay2D(Collision2D coll) {
+    void OnCollisionStay2D(Collision2D coll) 
+    {
         Grounded = true;
         Jumping = false;
     }
