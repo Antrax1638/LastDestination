@@ -93,8 +93,8 @@ Rigidbody2D:
   m_Simulated: 1
   m_UseFullKinematicContacts: 0
   m_UseAutoMass: 0
-  m_Mass: 20
-  m_LinearDrag: 0.5
+  m_Mass: 15
+  m_LinearDrag: 0.35
   m_AngularDrag: 0.05
   m_GravityScale: 0
   m_Material: {fileID: 0}
@@ -212,7 +212,7 @@ MonoBehaviour:
   Mode: 4
   Target: {fileID: 0}
   UpdateRate: 2
-  Speed: 50
+  Speed: 70
   ControlMode: 0
   Jump: 0
   JumpHeight: 5
@@ -233,10 +233,10 @@ MonoBehaviour:
   PathEnded: 0
   LineOfSight: 0
   Attack: 1
-  AttackRate: 190
+  AttackRate: 10
   AttackLength: 200
-  Prefab: {fileID: 1385619083570764, guid: 0ddd16f5df37aae4f9694aa3abdf73b4, type: 2}
-  AttackSpeed: 8
+  Prefab: {fileID: 1385619083570764, guid: 3c7727e0403923847825c719da49be39, type: 2}
+  AttackSpeed: 4
   AType: 1
   AMode: 1
   Accuracy: 0.5

@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Audio;
 
 [System.Serializable]
 public enum GunFireMode
@@ -33,6 +34,9 @@ public struct GunFireType
 public class Gun : MonoBehaviour 
 {
 	//Publicos:
+    [Header("Audio")]
+    public AudioSource Shoot;
+
     [Header("Gun Stats")]
 	public bool LookAtMouse;
 	public GunFireMode FireMode;
@@ -275,12 +279,11 @@ public class Gun : MonoBehaviour
 
             HandRotation += (RecoilForce * RecoilDirection) * Time.deltaTime;
             Vector2 Direction = Quaternion.Euler(0, 0, HandRotation) * Vector2.right;
-
+            Shoot.Play();
             for (int i = 0; i < ProjectilePool.Count; i++)
             {
                 if (ProjectilePool[i] != null && !ProjectilePool[i].activeInHierarchy)
                 {
-                    
                     ProjectilePool[i].transform.position = transform.position;
                     ProjectilePool[i].transform.rotation = transform.rotation;
                     PScript = ProjectilePool[i].GetComponent<Projectile>();
